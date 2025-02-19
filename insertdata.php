@@ -8,7 +8,7 @@ function insertSubjectsIntoDatabase($conn) {
     $row = $result->fetch_assoc();
 
     if ($row['count'] > 0) {
-        echo "A tantárgyak már fel vannak töltve az adatbázisba.<br>";
+        /*echo "A tantárgyak már fel vannak töltve az adatbázisba.<br>";*/
         return;
     }
 
@@ -20,7 +20,7 @@ function insertSubjectsIntoDatabase($conn) {
         $stmt->execute();
     }
 
-    echo "A tantárgyak sikeresen feltöltve az adatbázisba.<br>";
+    /*echo "A tantárgyak sikeresen feltöltve az adatbázisba.<br>";*/
 }
 
 function insertClassesIntoDatabase($conn) {
@@ -29,7 +29,7 @@ function insertClassesIntoDatabase($conn) {
     $row = $result->fetch_assoc();
 
     if ($row['count'] > 0) {
-        echo "Az osztályok már fel vannak töltve az adatbázisba.<br>";
+        /*echo "Az osztályok már fel vannak töltve az adatbázisba.<br>";*/
         return;
     }
 
@@ -43,7 +43,7 @@ function insertClassesIntoDatabase($conn) {
         $stmt->execute();
     }
 
-    echo "Az osztályok sikeresen feltöltve az adatbázisba.<br>";
+    /*echo "Az osztályok sikeresen feltöltve az adatbázisba.<br>";*/
 }
 
 
@@ -102,27 +102,93 @@ function insertStudentsIntoDatabase($nevek) {
             ]);
         }
  
-        echo "A tanulók sikeresen feltöltve az adatbázisba.<br>";
+        /*echo "A tanulók sikeresen feltöltve az adatbázisba.<br>";*/
     } catch (PDOException $e) {
        
-        echo "Hiba történt: " . $e->getMessage();
+        /*echo "Hiba történt: " . $e->getMessage();*/
     }
 }
  
  
 $generatedNames = getName();
- 
+
 function insertGradesIntoDatabase($conn) {
+    // Ellenőrizzük, hogy van-e már adat a jegyek táblában
     $checkSql = "SELECT COUNT(*) AS count FROM jegyek";
     $result = $conn->query($checkSql);
     $row = $result->fetch_assoc();
 
     if ($row['count'] > 0) {
-        echo "A jegyek már fel vannak töltve az adatbázisba.<br>";
         return;
     }
 
-    // Osztályok és évfolyamok lekérése
+    // Osztályok évfolyamának lekérdezése
+    $classYears = [];
+    $classSql = "SELECT id, evfolyam FROM osztalyok";
+    $classResult = $conn->query($classSql);
+
+    while ($classRow = $classResult->fetch_assoc()) {
+        $classYears[$classRow['id']] = $classRow['evfolyam'];
+    }
+
+    // Előkészített lekérdezés a jegyek beszúrására
+    $sql = "INSERT INTO jegyek (diak_id, tantargy_id, jegy, datum) VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+
+    // Diákok lekérdezése az osztályazonosítóval
+    $studentSql = "SELECT diak_id, osztaly_id FROM diakok";
+    $studentResult = $conn->query($studentSql);
+
+    while ($studentRow = $studentResult->fetch_assoc()) {
+        $studentId = $studentRow['diak_id'];
+        $classId = $studentRow['osztaly_id'];
+
+        // Aktuális év
+        $currentYear = date("Y");
+
+        // Ha nincs évfolyam adat, akkor alapértelmezetten 9. osztályosnak vesszük
+        $evfolyam = $classYears[$classId] ?? 9;
+
+        // Az adott tanév kezdő évének meghatározása
+        $studentYear = $currentYear - ($evfolyam - 1);
+
+        // Generáljuk a jegyeket
+        $jegyszam = rand(3, 5);
+        for ($i = 1; $i <= $jegyszam; $i++) {
+            $randomnum = rand(1, 8);
+
+            for ($subjectId = 1; $subjectId <= $randomnum; $subjectId++) {
+                $randomGrade = rand(1, 5);
+                
+                // Véletlenszerű dátum az adott tanévből (szeptembertől júniusig)
+                $randomMonth = rand(9, 12); // Őszi félév (szeptember - december)
+                if (rand(0, 1) === 1) { 
+                    $randomMonth = rand(1, 6); // Tavaszi félév (január - június)
+                }
+                
+                $randomDate = sprintf("%d-%02d-%02d", $studentYear, $randomMonth, rand(1, 28));
+
+                $stmt->bind_param("iiis", $studentId, $subjectId, $randomGrade, $randomDate);
+                $stmt->execute();
+            }
+        }
+    }
+
+    echo "A jegyek sikeresen feltöltve az adatbázisba.<br>";
+}
+
+
+
+ 
+/*function insertGradesIntoDatabase($conn) {
+    $checkSql = "SELECT COUNT(*) AS count FROM jegyek";
+    $result = $conn->query($checkSql);
+    $row = $result->fetch_assoc();
+
+    if ($row['count'] > 0) {
+        return;
+    }
+
     $classYears = [];
     $classSql = "SELECT id, evfolyam FROM osztalyok";
     $classResult = $conn->query($classSql);
@@ -140,7 +206,7 @@ function insertGradesIntoDatabase($conn) {
     while ($studentRow = $studentResult->fetch_assoc()) {
         $studentId = $studentRow['diak_id'];
         $classId = $studentRow['osztaly_id'];
-        $year = $classYears[$classId] ?? 2025; // Ha nincs évfolyam adat, alapértelmezett 2025
+        $year = $classYears[$classId] ?? 2025;
 
         $jegyszam = rand(3, 5);
         for ($i = 1; $i <= $jegyszam; $i++) {
@@ -155,10 +221,6 @@ function insertGradesIntoDatabase($conn) {
     }
 
     echo "A jegyek sikeresen feltöltve az adatbázisba.<br>";
-}
-
-
-
-
+}*/
 
 ?>

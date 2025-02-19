@@ -3,10 +3,13 @@
 require_once "insertdata.php";
 require_once "config.php";
 
-echo "  <form method='post'>
-        <button type='submit' name='install'>Mentés/Letöltés/Nem tudom</button>
+echo "  <form method='POST'>
+            <button type='submit' name='install'>Mentés/Letöltés/Nem tudom</button>
         </form>";
 
+if (isset($_POST["install"])) {
+    main();
+}
 
 
 function create_database($conn){
@@ -14,9 +17,9 @@ function create_database($conn){
             CHARACTER SET utf8 
             COLLATE utf8_general_ci;';
     if ($conn->query($sql) === TRUE) {
-        echo "<br> Database created successfully or already exists";
+        /*echo "<br> Database created successfully or already exists";*/
     } else {
-        echo "Error creating database: " . $conn->error;
+        /*echo "Error creating database: " . $conn->error;*/
     }
 }
 
@@ -29,9 +32,9 @@ function osztalyok($conn){
     )';
 
     if ($conn->query($sql) === TRUE) {
-        echo "<br>Table created successfully: osztalyok";
+        /*echo "<br>Table created successfully: osztalyok";*/
     } else {
-        echo "<br>Error creating table: " . $conn->error;
+        /*echo "<br>Error creating table: " . $conn->error;*/
     }
 }
 
@@ -45,9 +48,9 @@ function diakok($conn){
     )';
 
     if ($conn->query($sql) === TRUE) {
-        echo "<br>Table created successfully: diakok";
+        /*echo "<br>Table created successfully: diakok";*/
     } else {
-        echo "<br>Error creating table: " . $conn->error;
+        /*echo "<br>Error creating table: " . $conn->error;*/
     }
 }
 
@@ -58,9 +61,9 @@ function tantargyak($conn){
     )';
 
     if ($conn->query($sql) === TRUE) {
-        echo "<br>Table created successfully: tantargyak";
+        /*echo "<br>Table created successfully: tantargyak";*/
     } else {
-        echo "<br>Error creating table: " . $conn->error;
+        /*echo "<br>Error creating table: " . $conn->error;*/
     }
 }
 
@@ -75,47 +78,39 @@ function jegyek($conn){
     )';
 
     if ($conn->query($sql) === TRUE) {
-        echo "<br>Table created successfully: jegyek<br>";
+        /*echo "<br>Table created successfully: jegyek<br>";*/
     } else {
-        echo "<br>Error creating table: " . $conn->error;
+        /*echo "<br>Error creating table: " . $conn->error;*/
     }
 }
 
 function main() {
-    if (isset($_REQUEST["install"])) {
-        $servername = "localhost";
-        $username = "root";
-        $password = "";
-        $dbname = "naplo";
-    
-        $conn = new mysqli($servername, $username, $password);
-    
-        if ($conn->connect_error) {
-            die("Connection failed: " . $conn->connect_error);
-        }
-        echo "Connected successfully";
-        create_database($conn);
-        $conn = new mysqli($servername, $username, $password, $dbname);
-    
-        osztalyok($conn);
-        diakok($conn);
-        tantargyak($conn);
-        jegyek($conn);
+    $servername = "localhost";
+    $username = "root";
+    $password = "";
+    $dbname = "naplo";
 
-        insertStudentsIntoDatabase(getName());
+    $conn = new mysqli($servername, $username, $password);
 
-        insertSubjectsIntoDatabase($conn);
-
-        insertClassesIntoDatabase($conn);
-
-        insertGradesIntoDatabase($conn);
-
-        $conn->close();
-        
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
     }
+    /*echo "Connected successfully";*/
+    create_database($conn);
+    $conn = new mysqli($servername, $username, $password, $dbname);
+
+    osztalyok($conn);
+    diakok($conn);
+    tantargyak($conn);
+    jegyek($conn);
+    insertStudentsIntoDatabase(getName());
+    insertSubjectsIntoDatabase($conn);
+    insertClassesIntoDatabase($conn);
+    insertGradesIntoDatabase($conn);
+    $conn->close();
+
 }
 
-main();
 
 
 ?>
