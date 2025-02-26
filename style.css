@@ -1,0 +1,158 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    color: #333;
+}
+
+header {
+    background: #0056b3;
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+
+h1 {
+    text-align: center;
+}
+
+.years, .classes, .students {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.year, .class {
+    background: #007bff;
+    color: white;
+    padding: 10px 20px;
+    margin: 5px;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.year:hover, .class:hover {
+    background: #0056b3;
+}
+
+#students {
+    width: 80%;
+    margin-right:auto;
+    margin-left:auto;
+    text-align: center;
+}
+
+.topnav a{
+    color: #f2f2f2;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
+}
+
+.best-class, .top-students, .topstdnts{
+    width: 36%;
+    margin-right:auto;
+    margin-left:auto;
+    text-align: center;
+}
+
+.main {
+    text-align: center;
+}
+
+/* Alap stílusok */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #0056b3;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+/* Main content */
+main {
+    padding: 20px;
+    text-align: center;
+}
+
+/* Top Students section */
+.top-students {
+    margin-top: 30px;
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.top-students h2 {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    color: #0056b3;
+}
+
+.top-students .student-item {
+    display: flex;
+    justify-content: space-between;
+    background-color: #f4f4f4;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border-left: 5px solid #0056b3;
+    transition: all 0.3s ease;
+}
+
+.top-students .student-item:hover {
+    background-color: #e2e2e2;
+    border-left-color: #004080;
+}
+
+.top-students .student-item .student-info {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.top-students .student-item .student-info div {
+    font-size: 1.1em;
+}
+
+.top-students .student-item .student-info div span {
+    font-weight: bold;
+}
+
+/* Best Class section */
+.best-class {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.best-class h2 {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    color: #0056b3;
+}
+
+.best-class p {
+    font-size: 1.2em;
+    color: #333;
+    padding: 15px;
+    background-color: #f4f4f4;
+    border-radius: 5px;
+    border-left: 5px solid #0056b3;
+}
+

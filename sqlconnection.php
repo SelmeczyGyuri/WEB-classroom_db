@@ -3,14 +3,30 @@
 require_once "insertdata.php";
 require_once "config.php";
 
-echo "  <form method='POST'>
-            <button type='submit' name='install'>Mentés/Letöltés/Nem tudom</button>
-        </form>";
+//echo "  <form method='POST'>
+//            <button type='submit' name='install'>Mentés/Letöltés/Nem tudom</button>
+//        </form>";
 
-if (isset($_POST["install"])) {
-    main();
+
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "naplo";
+$conn = new mysqli($servername, $username, $password);
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
 
+
+
+if (isset($_POST["install"])) {
+    main($conn);
+}
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
 function create_database($conn){
     $sql = 'CREATE DATABASE IF NOT EXISTS naplo
@@ -84,28 +100,27 @@ function jegyek($conn){
     }
 }
 
-function main() {
+
+
+
+
+function main($conn) {
     $servername = "localhost";
     $username = "root";
     $password = "";
     $dbname = "naplo";
-
-    $conn = new mysqli($servername, $username, $password);
-
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
     /*echo "Connected successfully";*/
     create_database($conn);
     $conn = new mysqli($servername, $username, $password, $dbname);
 
     osztalyok($conn);
     diakok($conn);
+    
     tantargyak($conn);
     jegyek($conn);
+    insertClassesIntoDatabase($conn);
     insertStudentsIntoDatabase(getName());
     insertSubjectsIntoDatabase($conn);
-    insertClassesIntoDatabase($conn);
     insertGradesIntoDatabase($conn);
     $conn->close();
 
