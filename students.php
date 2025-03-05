@@ -9,6 +9,33 @@ if (!isset($_GET['class_id'])) {
 
 $class_id = intval($_GET['class_id']);
 
+// Osztály nevének és évfolyamának lekérdezése
+$query_class_info = "SELECT name, evfolyam FROM osztalyok WHERE id = ?";
+$stmt_class_info = $conn->prepare($query_class_info);
+$stmt_class_info->bind_param("i", $class_id);
+$stmt_class_info->execute();
+$result_class_info = $stmt_class_info->get_result();
+$class_info = $result_class_info->fetch_assoc();
+
+if (!$class_info) {
+    displayMessage("Az osztály nem található!", "error");
+    exit;
+}
+$class_name = $class_info['name'];
+$class_grade = $class_info['evfolyam'];
+
+// Összes diák lekérdezése az osztályból
+$query_students = "SELECT nev FROM diakok WHERE osztaly_id = ? ORDER BY nev";
+$stmt_students = $conn->prepare($query_students);
+$stmt_students->bind_param("i", $class_id);
+$stmt_students->execute();
+$result_students = $stmt_students->get_result();
+
+$students = [];
+while ($row = $result_students->fetch_assoc()) {
+    $students[] = $row['nev'];
+}
+
 // Tantárgyak lekérdezése
 $query_subjects = "SELECT DISTINCT tantargyak.tantargy 
                    FROM jegyek 
@@ -72,47 +99,25 @@ $query_class_avg_subjects = "
     WHERE diakok.osztaly_id = ?
     GROUP BY tantargyak.tantargy
     ORDER BY tantargyak.tantargy";
-
 $stmt_class_avg_subjects = $conn->prepare($query_class_avg_subjects);
 $stmt_class_avg_subjects->bind_param("i", $class_id);
 $stmt_class_avg_subjects->execute();
 $result_class_avg_subjects = $stmt_class_avg_subjects->get_result();
 
-// Osztály nevének és évfolyamának lekérdezése
-$query_class_info = "SELECT name, evfolyam FROM osztalyok WHERE id = ?";
-$stmt_class_info = $conn->prepare($query_class_info);
-$stmt_class_info->bind_param("i", $class_id);
-$stmt_class_info->execute();
-$result_class_info = $stmt_class_info->get_result();
-$class_info = $result_class_info->fetch_assoc();
-
-// Ha nincs ilyen osztály, akkor hibaüzenet
-if (!$class_info) {
-    displayMessage("Az osztály nem található!", "error");
-    exit;
+// Adatok tárolása
+$student_data = [];
+while ($row = $result_avg_subjects->fetch_assoc()) {
+    $student_data[$row['nev']][$row['tantargy']] = number_format($row['atlag'], 2);
 }
-
-// Osztály neve és évfolyama
-$class_name = $class_info['name'];
-$class_grade = $class_info['evfolyam'];
-
-
-// Osztály tantárgyankénti átlagainak tárolása
-$class_subject_averages = [];
-while ($row = $result_class_avg_subjects->fetch_assoc()) {
-    $class_subject_averages[$row['tantargy']] = number_format($row['atlag'], 2);
-}
-
 
 $student_averages = [];
 while ($row = $result_avg_all->fetch_assoc()) {
     $student_averages[$row['nev']]['osszatlag'] = number_format($row['osszatlag'], 2);
 }
 
-// Adatok tárolása
-$student_data = [];
-while ($row = $result_avg_subjects->fetch_assoc()) {
-    $student_data[$row['nev']][$row['tantargy']] = number_format($row['atlag'], 2);
+$class_subject_averages = [];
+while ($row = $result_class_avg_subjects->fetch_assoc()) {
+    $class_subject_averages[$row['tantargy']] = number_format($row['atlag'], 2);
 }
 ?>
 
@@ -120,7 +125,7 @@ while ($row = $result_avg_subjects->fetch_assoc()) {
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
-    <title>Tanulók - <?php echo $class_id; ?>. osztály</title>
+    <title>Tanulók - <?php echo $class_grade . '/' . $class_name; ?></title>
     <link rel="stylesheet" href="style.css">
     <script>
         function toggleStudentDetails(studentName) {
@@ -139,36 +144,40 @@ while ($row = $result_avg_subjects->fetch_assoc()) {
     </section>
     <h1><?php echo $class_grade; ?>. évfolyam - <?php echo $class_name; ?> osztály</h1>
 
-
     <section id="students">
         <h2>Diákok átlagai tantárgyanként</h2>
-        <?php foreach ($student_data as $student => $grades): ?>
-            <h3 onclick="toggleStudentDetails('<?php echo $student; ?>')" style="cursor: pointer; color: blue;">
-                <?php echo $student; ?>
-            </h3>
-            <table id="<?php echo $student; ?>" style="display: none; width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                <thead>
-                    <tr>
-                        <?php foreach ($subjects as $subject): ?>
-                            <th style="border: 1px solid #ccc; padding: 8px;"><?php echo $subject; ?></th>
-                        <?php endforeach; ?>
-                        <th style="border: 1px solid #ccc; padding: 8px;">Összes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <?php foreach ($subjects as $subject): ?>
+        <?php if (empty($students)): ?>
+            <p>Nincsenek diákok ebben az osztályban.</p>
+        <?php else: ?>
+            <?php foreach ($students as $student): ?>
+                <h3 onclick="toggleStudentDetails('<?php echo $student; ?>')" style="cursor: pointer; color: blue;">
+                    <?php echo $student; ?>
+                </h3>
+                <table id="<?php echo $student; ?>" style="display: none; width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr>
+                            <?php foreach ($subjects as $subject): ?>
+                                <th style="border: 1px solid #ccc; padding: 8px;"><?php echo $subject; ?></th>
+                            <?php endforeach; ?>
+                            <th style="border: 1px solid #ccc; padding: 8px;">Összes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <?php foreach ($subjects as $subject): ?>
+                                <td style="border: 1px solid #ccc; padding: 8px;">
+                                    <?php echo isset($student_data[$student][$subject]) ? $student_data[$student][$subject] : '-'; ?>
+                                </td>
+                            <?php endforeach; ?>
                             <td style="border: 1px solid #ccc; padding: 8px;">
-                                <?php echo isset($grades[$subject]) ? $grades[$subject] : '-'; ?>
+                                <?php echo isset($student_averages[$student]['osszatlag']) ? $student_averages[$student]['osszatlag'] : '-'; ?>
                             </td>
-                        <?php endforeach; ?>
-                        <td style="border: 1px solid #ccc; padding: 8px;">
-                            <?php echo $student_averages[$student]['osszatlag'] ?? '-'; ?>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        <?php endforeach; ?>
+                        </tr>
+                    </tbody>
+                </table>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
         <h2>Osztály átlagok tantárgyanként</h2>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
             <thead>
@@ -188,8 +197,7 @@ while ($row = $result_avg_subjects->fetch_assoc()) {
                 </tr>
             </tbody>
         </table>
-        <h2>Osztály összesített átlaga: <?php echo number_format($class_avg_row['osztaly_atlag'], 2); ?></h2>
-
+        <h2>Osztály összesített átlaga: <?php echo number_format($class_avg_row['osztaly_atlag'] ?? 0, 2); ?></h2>
     </section>
 </main>
 

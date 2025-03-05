@@ -98,6 +98,43 @@ function insertStudentsIntoDatabase($conn, $nevek) {
     }
 }
 
+function insertGradesForStudent($conn, $studentId, $classId) {
+    $sql = "INSERT INTO jegyek (diak_id, tantargy_id, jegy, datum) VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+
+    $classSql = "SELECT evfolyam FROM osztalyok WHERE id = ?";
+    $classStmt = $conn->prepare($classSql);
+    $classStmt->bind_param("i", $classId);
+    $classStmt->execute();
+    $classResult = $classStmt->get_result();
+    $classRow = $classResult->fetch_assoc();
+    $baseYear = $classRow['evfolyam'] ?? 2020;
+
+    $jegyszam = rand(3, 5);
+
+    for ($i = 1; $i <= $jegyszam; $i++) {
+        for ($subjectId = 1; $subjectId <= 8; $subjectId++) {
+            $randomGrade = rand(1, 5);
+
+            $isFallSemester = rand(0, 1) === 0;
+
+            if ($isFallSemester) {
+                $randomMonth = rand(9, 12);
+                $randomYear = $baseYear;
+            } else {
+                $randomMonth = rand(1, 6);
+                $randomYear = $baseYear + 1;
+            }
+
+            $randomDay = rand(1, 28);
+            $randomDate = sprintf("%d-%02d-%02d", $randomYear, $randomMonth, $randomDay);
+
+            $stmt->bind_param("iiis", $studentId, $subjectId, $randomGrade, $randomDate);
+            $stmt->execute();
+        }
+    }
+}
+
 function insertGradesIntoDatabase($conn) {
     $checkSql = "SELECT COUNT(*) AS count FROM jegyek";
     $result = $conn->query($checkSql);
