@@ -73,40 +73,28 @@ function getName() {
  
 $generatedNames = getName();
 
-function insertStudentsIntoDatabase($nevek) {
-    $host = 'localhost';
-    $dbname = 'naplo';
-    $username = 'root';
-    $password = '';
- 
-    try {
- 
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
- 
-        $sql = "INSERT INTO diakok (nev, nem, osztaly_id) VALUES (:nev, :nem, :osztaly_id)";
- 
-        $stmt = $pdo->prepare($sql);
- 
-        $classIds = [];
-        for ($classId = 1; $classId <= 12; $classId++) {
-            for ($i = 0; $i < 15; $i++) {
-                $classIds[] = $classId;
-            }
+function insertStudentsIntoDatabase($conn, $nevek) {
+    $checkSql = "SELECT COUNT(*) AS count FROM diakok";
+    $result = $conn->query($checkSql);
+    $row = $result->fetch_assoc();
+
+    if ($row['count'] > 0) {
+        return;
+    }
+
+    $sql = "INSERT INTO diakok (nev, nem, osztaly_id) VALUES (?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+
+    $classIds = [];
+    for ($classId = 1; $classId <= 12; $classId++) {
+        for ($i = 0; $i < 15; $i++) {
+            $classIds[] = $classId;
         }
- 
-        foreach ($nevek as $index => $student) {
-            $stmt->execute([
-                ':nev' => $student['name'],
-                ':nem' => $student['gender'],
-                ':osztaly_id' => $classIds[$index % count($classIds)]
-            ]);
-        }
- 
-        /*echo "A tanulók sikeresen feltöltve az adatbázisba.<br>";*/
-    } catch (PDOException $e) {
-       
-        /*echo "Hiba történt: " . $e->getMessage();*/
+    }
+
+    foreach ($nevek as $index => $student) {
+        $stmt->bind_param("ssi", $student['name'], $student['gender'], $classIds[$index % count($classIds)]);
+        $stmt->execute();
     }
 }
 
@@ -119,12 +107,13 @@ function insertGradesIntoDatabase($conn) {
         return;
     }
 
+    // Fetch class years (evfolyam) for each class
     $classYears = [];
     $classSql = "SELECT id, evfolyam FROM osztalyok";
     $classResult = $conn->query($classSql);
 
     while ($classRow = $classResult->fetch_assoc()) {
-        $classYears[$classRow['id']] = $classRow['evfolyam'];
+        $classYears[$classRow['id']] = intval($classRow['evfolyam']); // Convert evfolyam to integer
     }
 
     $sql = "INSERT INTO jegyek (diak_id, tantargy_id, jegy, datum) VALUES (?, ?, ?, ?)";
@@ -133,39 +122,45 @@ function insertGradesIntoDatabase($conn) {
     $studentSql = "SELECT diak_id, osztaly_id FROM diakok";
     $studentResult = $conn->query($studentSql);
 
-    $currentYear = date("Y");
-
     while ($studentRow = $studentResult->fetch_assoc()) {
         $studentId = $studentRow['diak_id'];
         $classId = $studentRow['osztaly_id'];
 
-        //$evfolyam = $classYears[$classId] ?? 9;
+        // Get the base year (evfolyam) for this student's class
+        $baseYear = $classYears[$classId] ?? 2020; // Default to 2020 if not found
 
-        $studentYear = $currentYear;
-
+        // Randomly decide how many grade entries (3 to 5) for this student
         $jegyszam = rand(3, 5);
-        for ($i = 1; $i <= $jegyszam; $i++) {
 
-            for ($subjectId = 1; $subjectId <= 8; $subjectId++) {
+        for ($i = 1; $i <= $jegyszam; $i++) {
+            for ($subjectId = 1; $subjectId <= 8; $subjectId++) { // Assuming 8 subjects from SUBJECTS
                 $randomGrade = rand(1, 5);
 
-                $randomMonth = rand(9, 12);
-                $randomYear = $studentYear;
+                // Randomly choose between fall (Sep-Dec) or spring (Jan-Jun) semester
+                $isFallSemester = rand(0, 1) === 0;
 
-                if (rand(0, 1) === 1) { 
+                if ($isFallSemester) {
+                    // Fall semester: September to December of baseYear
+                    $randomMonth = rand(9, 12);
+                    $randomYear = $baseYear;
+                } else {
+                    // Spring semester: January to June of next year
                     $randomMonth = rand(1, 6);
-                    $randomYear = $studentYear + 1;
+                    $randomYear = $baseYear + 1;
                 }
 
-                $randomDate = sprintf("%d-%02d-%02d", $randomYear, $randomMonth, rand(1, 28));
+                // Generate a random day (1-28 to avoid month-end issues)
+                $randomDay = rand(1, 28);
+                $randomDate = sprintf("%d-%02d-%02d", $randomYear, $randomMonth, $randomDay);
 
+                // Insert the grade
                 $stmt->bind_param("iiis", $studentId, $subjectId, $randomGrade, $randomDate);
                 $stmt->execute();
             }
         }
     }
 
-    echo "A jegyek sikeresen feltöltve az adatbázisba.<br>";
+    //echo "A jegyek sikeresen feltöltve az adatbázisba.<br>";
 }
 
 ?>

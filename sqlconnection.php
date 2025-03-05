@@ -17,6 +17,15 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+$sql = 'CREATE DATABASE IF NOT EXISTS naplo
+        CHARACTER SET utf8 
+        COLLATE utf8_general_ci;';
+if ($conn->query($sql) === TRUE) {
+    /*echo "<br> Database created successfully or already exists";*/
+} else {
+    /*echo "Error creating database: " . $conn->error;*/
+}
+
 
 
 if (isset($_POST["install"])) {
@@ -28,16 +37,9 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-function create_database($conn){
-    $sql = 'CREATE DATABASE IF NOT EXISTS naplo
-            CHARACTER SET utf8 
-            COLLATE utf8_general_ci;';
-    if ($conn->query($sql) === TRUE) {
-        /*echo "<br> Database created successfully or already exists";*/
-    } else {
-        /*echo "Error creating database: " . $conn->error;*/
-    }
-}
+
+
+
 
 
 function osztalyok($conn){
@@ -110,7 +112,7 @@ function main($conn) {
     $password = "";
     $dbname = "naplo";
     /*echo "Connected successfully";*/
-    create_database($conn);
+    //create_database($conn);
     $conn = new mysqli($servername, $username, $password, $dbname);
 
     osztalyok($conn);
@@ -119,7 +121,7 @@ function main($conn) {
     tantargyak($conn);
     jegyek($conn);
     insertClassesIntoDatabase($conn);
-    insertStudentsIntoDatabase(getName());
+    insertStudentsIntoDatabase($conn, getName());
     insertSubjectsIntoDatabase($conn);
     insertGradesIntoDatabase($conn);
     $conn->close();
